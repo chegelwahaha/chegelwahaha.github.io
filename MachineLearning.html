@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teachable Machine GitHub Pages Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+        #webcam-container {
+            margin-bottom: 20px;
+        }
+        #label-container {
+            margin-top: 10px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h1>Teachable Machine 模型测试1</h1>
+    <button onclick="init()">启动模型</button>
+    <div id="webcam-container"></div>
+    <div id="label-container"></div>
+
+    <!-- 引入 TensorFlow.js 和 Teachable Machine 库 -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest"></script>
+
+    <script>
+        let model, webcam, labelContainer, maxPredictions;
+
+        async function init() {
+            try {
+                console.log("正在加载模型...");
+                
+                // 修改为 GitHub Pages 上的模型路径
+                const modelURL = "models_KBMouse/model.json";  
+                const metadataURL = "models_KBMouse/metadata.json";
+
+                model = await tmImage.load(modelURL, metadataURL);
+                console.log("模型加载成功！");
+
+                maxPredictions = model.getTotalClasses();
+                console.log("模型类别数：" + maxPredictions);
+
+                // 启动摄像头
+                webcam = new tmImage.Webcam(200, 200, true);
+                await webcam.setup();
+                await webcam.play();
+                document.getElementById("webcam-container").appendChild(webcam.canvas);
+                window.requestAnimationFrame(loop);
+
+                // 预测结果
+                labelContainer = document.getElementById("label-container");
+                labelContainer.innerHTML = "";
+                for (let i = 0; i < maxPredictions; i++) {
+                    labelContainer.appendChild(document.createElement("div"));
+                }
+            } catch (error) {
+                console.error("模型加载失败：", error);
+            }
+        }
+
+        async function loop() {
+            webcam.update(); 
+            await predict();
+            window.requestAnimationFrame(loop);
+        }
+
+        async function predict() {
+            const prediction = await model.predict(webcam.canvas);
+            for (let i = 0; i < maxPredictions; i++) {
+                const classPrediction = prediction[i].className + ": " + 
+                                        (prediction[i].probability * 100).toFixed(2) + "%";
+                labelContainer.childNodes[i].innerHTML = classPrediction;
+            }
+        }
+    </script>
+</body>
+</html>
